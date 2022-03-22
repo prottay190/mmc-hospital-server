@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+var ObjectId = require("mongodb").ObjectId;
 require('dotenv').config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
@@ -14,37 +15,45 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 // console.log(uri)
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-async function run(){
-    try{
-         await client.connect();
-         console.log('db connect')
-         const database = client.db('hospital-info')
-         const doctorsCollection = database.collection('doctors')
+async function run() {
+    try {
+        await client.connect();
+        console.log('db connect')
+        const database = client.db('hospital-info')
+        const doctorsCollection = database.collection('doctors')
 
-      //get data
-      app.get('/doctors', async (req, res) =>{
-        //   console.log(req.query);
-        const cursor = doctorsCollection.find({});
-        const page = req.query.page;
-        const size = parseInt(req.query.size);
-        let doctors;
-        const count = await cursor.count();
-        if(page){
-            doctors = await cursor.skip(page*size).limit(size).toArray();
-        }
-        else{
-            doctors = await cursor.toArray();
-        }
-        
-       
-        res.send({
-            doctors,
-            count
+        //get data
+        app.get('/doctors', async (req, res) => {
+            //   console.log(req.query);
+            const cursor = doctorsCollection.find({});
+            const page = req.query.page;
+            const size = parseInt(req.query.size);
+            let doctors;
+            const count = await cursor.count();
+            if (page) {
+                doctors = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                doctors = await cursor.toArray();
+            }
+
+
+            res.send({
+                doctors,
+                count
+            })
         })
-      })
-         
+
+        // get a single hotel from the database with the ObjectId
+        app.get("/doctors/:id", async (req, res) => {
+            const doctor = await doctorsCollection.findOne({
+                _id: ObjectId(req.params.id),
+            });
+            res.send(doctor);
+        });
+
     }
-    finally{
+    finally {
         // await client.close()
     }
 }
@@ -55,6 +64,6 @@ app.get('/', (req, res) => {
     res.send('running')
 });
 
-app.listen(port, () =>{
+app.listen(port, () => {
     console.log('running g', port)
 })
